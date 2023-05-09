@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"time"
 )
 
 // PostgreSQLContainer wraps testcontainers.Container with extra methods.
@@ -55,7 +55,7 @@ func NewPostgreSQLContainer(ctx context.Context, opts ...PostgreSQLContainerOpti
 		ImageTag: "11.5",
 		User:     "user",
 		Password: "password",
-		Database: "test1",
+		Database: "tstbase",
 	}
 	for _, opt := range opts {
 		opt(&config)
@@ -79,10 +79,10 @@ func NewPostgreSQLContainer(ctx context.Context, opts ...PostgreSQLContainerOpti
 			WaitingFor: wait.ForSQL(
 				nat.Port(containerPort),
 				"postgres",
-				func(port nat.Port) string {
-					return fmt.Sprintf("postgres://%s:%s@localhost:%s/%s?sslmode=disable", config.User, config.Password, port.Port(), config.Database)
-				}).
-				Timeout(10 * time.Second),
+				func(host string, port nat.Port) string {
+					return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.User, config.Password, host, port.Port(), config.Database)
+				},
+			),
 		},
 		Started:      true,
 		ProviderType: testcontainers.ProviderDocker,
